@@ -144,11 +144,11 @@ export function notifyBounceWorklet(
   }
   
   // Execute bounce sequence
-  translateY.value = withSequence(...bounces, withTiming(0, { duration: 0 }, (finished) => {
+  translateY.value = withSequence(...bounces, withTiming(0, { duration: 0 }, (finished?: boolean) => {
     if (finished && onComplete) {
       runOnUI(onComplete)();
     }
-  }));
+  })) as number;
   
   // Subtle scale pulse during bounce
   scale.value = withSequence(
@@ -350,4 +350,3 @@ export function useTaskbarController(options: TaskbarBounceOptions = {}) {
   };
 }
 
-import { withSequence } from 'react-native-reanimated';

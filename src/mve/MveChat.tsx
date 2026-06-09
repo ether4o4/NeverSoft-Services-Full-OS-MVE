@@ -22,6 +22,8 @@ import {
 } from 'react-native';
 import { ChatMessage, MveBridge } from './MveBridge';
 import { ActionRegistry, Intent } from './ActionRegistry';
+import { ThemeStore } from '../theme/themes';
+import { handleAssistantCommand } from './assistantCommands';
 
 const HELP_TOPICS: { title: string; body: string }[] = [
   {
@@ -40,6 +42,14 @@ const HELP_TOPICS: { title: string; body: string }[] = [
     title: 'Tips',
     body: 'Lead with a verb to make an actionable task — e.g. “find my tax pdf”, “remind me to call Sam”, “build the launcher”. Switch to the Terminal tab for the sandbox shell.',
   },
+  {
+    title: 'Designs & themes',
+    body: 'Say “themes” for the full pre-configured design catalog, “theme <name>” to switch the whole OS, or use the Aesthetic Quickswitch in the clock popup.',
+  },
+  {
+    title: 'Assistant name & shell',
+    body: 'Rename the assistant with “call you <name>”. Prefix a message with “$ ” to run it in the real sandbox shell — same shell as the cmd desktop icon.',
+  },
 ];
 
 const MveChat: React.FC = () => {
@@ -49,11 +59,19 @@ const MveChat: React.FC = () => {
   const [helpOpen, setHelpOpen] = useState(false);
   const [intentsOpen, setIntentsOpen] = useState(false);
   const [openIntents, setOpenIntents] = useState<Intent[]>([]);
+  const [assistantName, setAssistantName] = useState(
+    () => ThemeStore.get().assistantName,
+  );
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
   useEffect(() => {
     MveBridge.getHistory().then(setMessages).catch(() => {});
   }, []);
+
+  useEffect(
+    () => ThemeStore.subscribe(() => setAssistantName(ThemeStore.get().assistantName)),
+    [],
+  );
 
   useEffect(() => ActionRegistry.subscribe(() => setOpenIntents(ActionRegistry.open())), []);
 
@@ -70,7 +88,10 @@ const MveChat: React.FC = () => {
     setLoading(true);
     scrollToEnd();
     try {
-      const reply = await MveBridge.sendMessage(text);
+      // Aesthetics, renaming and shell access are handled by the assistant
+      // itself; everything else goes through to the engine.
+      const local = await handleAssistantCommand(text);
+      const reply = local ?? (await MveBridge.sendMessage(text));
       setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
     } catch (e) {
       setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${String(e)}` }]);
@@ -95,7 +116,9 @@ const MveChat: React.FC = () => {
   const toolbar = useMemo(
     () => (
       <View style={styles.toolbar}>
-        <Text style={styles.toolbarTitle}>Chat</Text>
+        <Text style={styles.toolbarTitle} numberOfLines={1}>
+          {assistantName}
+        </Text>
         <View style={styles.toolbarActions}>
           <ToolbarButton label="＋" hint="New chat" onPress={newChat} />
           <ToolbarButton label="⌫" hint="Clear" onPress={clearChat} />
@@ -160,7 +183,7 @@ const MveChat: React.FC = () => {
           style={styles.input}
           value={input}
           onChangeText={setInput}
-          placeholder="Message MVE…"
+          placeholder={`Message ${assistantName}…`}
           placeholderTextColor="#8aa6c8"
           onSubmitEditing={send}
           returnKeyType="send"
@@ -225,7 +248,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.12)',
   },
-  toolbarTitle: { color: '#cfe0f2', fontSize: 13, fontWeight: '700' },
+  toolbarTitle: { color: '#cfe0f2', fontSize: 13, fontWeight: '700', flex: 1, marginRight: 8 },
   toolbarActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   toolBtn: {
     minWidth: 30,

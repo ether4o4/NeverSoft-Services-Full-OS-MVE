@@ -20,7 +20,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 const { useDerivedValue, useFrame } = require('@shopify/react-native-skia');
 
-interface GlassButtonProps {
+export interface GlassButtonProps {
   title: string;
   onPress: () => void;
   width?: number;
@@ -96,7 +96,7 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
   const pressValue = useSharedValue(0);
   const timeValue = useSharedValue(0);
 
-  useFrame((frameInfo) => {
+  useFrame((frameInfo: any) => {
     timeValue.value = frameInfo.timeSinceFirstFrame / 1000;
   });
 

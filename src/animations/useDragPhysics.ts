@@ -14,10 +14,15 @@ import {
   runOnUI,
   type SharedValue,
   type AnimatedStyle,
-  type GestureStateChangeEvent,
-  type GestureUpdateEvent,
-  type PanGestureHandlerEventPayload,
+
+
+
 } from 'react-native-reanimated';
+import type {
+  GestureStateChangeEvent,
+  GestureUpdateEvent,
+  PanGestureHandlerEventPayload,
+} from 'react-native-gesture-handler';
 import { SPRING_CONFIG_DEFAULT, SPRING_CONFIG_GENTLE } from './springConfigs';
 
 export interface DragPhysicsState {
@@ -183,7 +188,7 @@ export function onDragEndWorklet(
   };
   
   // Apply momentum decay with snap to grid if specified
-  translateX.value = withDecay(decayConfig, (finished) => {
+  translateX.value = withDecay(decayConfig as any, (finished) => {
     if (finished) {
       // Snap to grid if specified
       if (snapToGrid) {
@@ -197,7 +202,7 @@ export function onDragEndWorklet(
     }
   });
   
-  translateY.value = withDecay(decayConfigY, (finished) => {
+  translateY.value = withDecay(decayConfigY as any, (finished) => {
     if (finished && snapToGrid) {
       const snapped = Math.round(translateY.value / snapToGrid) * snapToGrid;
       translateY.value = withSpring(snapped, SPRING_CONFIG_GENTLE);

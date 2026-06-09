@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { View, StyleSheet, Text, ViewStyle, TextStyle } from 'react-native';
+import { View, StyleSheet, Text, ViewStyle, Dimensions } from 'react-native';
 import {
   Canvas,
   Group,
@@ -9,7 +9,7 @@ import {
   Skia,
   vec,
   LinearGradient,
-  BlurMaskFilter,
+  BlurMask,
 } from '@shopify/react-native-skia';
 import Animated, {
   useSharedValue,
@@ -22,7 +22,10 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 const { useDerivedValue, useFrame } = require('@shopify/react-native-skia');
 
-interface WindowFrameProps {
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+const TASKBAR_CLEARANCE = 48;
+
+export interface WindowFrameProps {
   title: string;
   width: number;
   height: number;
@@ -168,7 +171,7 @@ const WindowButton: React.FC<WindowButtonProps> = ({
         );
       case 'close':
         return (
-          <Text style={[styles.closeIcon, { color: iconColor }]}×</Text>
+          <Text style={[styles.closeIcon, { color: iconColor }]}>×</Text>
         );
     }
   };
@@ -201,6 +204,9 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
   titleBarHeight = 32,
   cornerRadius = 6,
   draggable = true,
+  resizable = true,
+  maxWidth,
+  maxHeight,
 }) => {
   const shaderRef = useRef(windowFrameShaderSource);
   const titleBarShaderRef = useRef(titleBarShaderSource);
@@ -217,7 +223,7 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
   const timeValue = useSharedValue(0);
   const isDragging = useSharedValue(false);
 
-  useFrame((frameInfo) => {
+  useFrame((frameInfo: any) => {
     timeValue.value = frameInfo.timeSinceFirstFrame / 1000;
   });
 
@@ -251,17 +257,43 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
       scaleValue.value = withTiming(1.01, { duration: 100 });
     })
     .onChange((event) => {
-      posX.value += event.changeX;
-      posY.value += event.changeY;
+      // Clamp on every frame so a window can never fly off-screen or get
+      // stuck above the top edge: the title bar always stays grabbable.
+      const minX = -(windowWidth - 64);
+      const maxX = SCREEN_W - 64;
+      const maxY = SCREEN_H - TASKBAR_CLEARANCE - titleBarHeight;
+      posX.value = Math.min(Math.max(posX.value + event.changeX, minX), maxX);
+      posY.value = Math.min(Math.max(posY.value + event.changeY, 0), maxY);
     })
     .onEnd(() => {
       isDragging.value = false;
       scaleValue.value = withTiming(1, { duration: 150 });
     });
 
+  // Bottom-right corner resize. Runs on the JS thread because it drives the
+  // windowWidth/windowHeight React state that sizes the Skia canvases.
+  const resizeStart = useRef({ w: initialWidth, h: initialHeight });
+  const resizeGesture = Gesture.Pan()
+    .enabled(resizable && !isMaximized)
+    .runOnJS(true)
+    .onStart(() => {
+      resizeStart.current = { w: windowWidth, h: windowHeight };
+    })
+    .onUpdate((event) => {
+      const capW = maxWidth ?? SCREEN_W;
+      const capH = maxHeight ?? SCREEN_H - TASKBAR_CLEARANCE;
+      setWindowWidth(
+        Math.min(capW, Math.max(minWidth, resizeStart.current.w + event.translationX)),
+      );
+      setWindowHeight(
+        Math.min(capH, Math.max(minHeight, resizeStart.current.h + event.translationY)),
+      );
+    });
+
   const handleClose = () => {
+    const close = onClose ?? (() => {});
     opacityValue.value = withTiming(0, { duration: 150 }, () => {
-      runOnJS(onClose)?.();
+      runOnJS(close)();
     });
   };
 
@@ -275,7 +307,6 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
 
   return (
     <Animated.View style={[styles.container, animatedStyle, style]}>
-      <GestureDetector gesture={dragGesture}>
         <View style={[{ width: windowWidth, height: windowHeight }]} >
           {/* Window frame background */}
           <Canvas style={{ width: windowWidth, height: windowHeight, position: 'absolute' }}>
@@ -288,7 +319,7 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
                 height={windowHeight}
                 r={cornerRadius}
               >
-                <BlurMaskFilter blur={15} style="normal" respectCTM />
+                <BlurMask blur={15} style="normal" respectCTM />
                 {runtimeEffect.current && (
                   <Shader
                     source={runtimeEffect.current}
@@ -311,8 +342,9 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
             </Group>
           </Canvas>
 
-          {/* Title bar */}
+          {/* Title bar — the drag surface, so content scrolling never fights it */}
           {showTitleBar && (
+            <GestureDetector gesture={dragGesture}>
             <View style={[styles.titleBar, { width: windowWidth, height: titleBarHeight }]}>
               <Canvas style={{ width: windowWidth, height: titleBarHeight, position: 'absolute' }}>
                 <Group>
@@ -353,13 +385,14 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
               {/* Window controls */}
               <View style={styles.windowControls}>
                 <WindowButton type="minimize" onPress={onMinimize || (() => {})} />
-                <WindowButton 
-                  type={isMaximized ? 'restore' : 'maximize'} 
-                  onPress={handleMaximize} 
+                <WindowButton
+                  type={isMaximized ? 'restore' : 'maximize'}
+                  onPress={handleMaximize}
                 />
                 <WindowButton type="close" onPress={handleClose} />
               </View>
             </View>
+            </GestureDetector>
           )}
 
           {/* Window content */}
@@ -370,8 +403,16 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
           }]}>
             {children}
           </View>
+
+          {/* Resize grip */}
+          {resizable && !isMaximized && (
+            <GestureDetector gesture={resizeGesture}>
+              <View style={styles.resizeCorner}>
+                <Text style={styles.resizeGlyph}>◢</Text>
+              </View>
+            </GestureDetector>
+          )}
         </View>
-      </GestureDetector>
     </Animated.View>
   );
 };
@@ -458,6 +499,21 @@ const styles = StyleSheet.create({
   },
   content: {
     overflow: 'hidden',
+  },
+  resizeCorner: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 28,
+    height: 28,
+    zIndex: 20,
+    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
+    padding: 4,
+  },
+  resizeGlyph: {
+    color: 'rgba(255, 255, 255, 0.55)',
+    fontSize: 12,
   },
 });
 

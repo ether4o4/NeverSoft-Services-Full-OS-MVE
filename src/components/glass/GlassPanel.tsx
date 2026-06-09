@@ -2,10 +2,11 @@ import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
 import {
   Canvas,
+  Skia,
   Group,
   RoundedRect,
   Paint,
-  BlurMaskFilter,
+  BlurMask,
   Shader,
   RuntimeShader,
   vec,
@@ -21,7 +22,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 const { useDerivedValue, useFrame } = require('@shopify/react-native-skia');
 
-interface GlassPanelProps {
+export interface GlassPanelProps {
   width: number;
   height: number;
   cornerRadius?: number;
@@ -103,7 +104,7 @@ export const GlassPanel: React.FC<GlassPanelProps> = ({
   const timeValue = useSharedValue(0);
 
   // Animation loop
-  useFrame((frameInfo) => {
+  useFrame((frameInfo: any) => {
     timeValue.value = frameInfo.timeSinceFirstFrame / 1000;
   });
 
@@ -155,7 +156,7 @@ export const GlassPanel: React.FC<GlassPanelProps> = ({
           <Group>
             {/* Backdrop blur effect */}
             <Paint>
-              <BlurMaskFilter blur={blurRadius} style="normal" respectCTM />
+              <BlurMask blur={blurRadius} style="normal" respectCTM />
             </Paint>
             
             {/* Main glass panel */}

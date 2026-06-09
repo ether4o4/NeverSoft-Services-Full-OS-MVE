@@ -9,32 +9,41 @@
  * intelligence of its own. When the native engine isn't linked, the bridge's
  * mock keeps everything interactive and a banner says so.
  */
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { MveBridge, isNative } from './MveBridge';
+import { isNative } from './MveBridge';
 import MveChat from './MveChat';
+import Terminal from '../desktop/Terminal';
+import { ThemeStore } from '../theme/themes';
 
 type Tab = 'chat' | 'terminal';
 
 const MveScreen: React.FC = () => {
   const [tab, setTab] = useState<Tab>('chat');
+  const [assistantName, setAssistantName] = useState(
+    () => ThemeStore.get().assistantName,
+  );
+
+  React.useEffect(
+    () => ThemeStore.subscribe(() => setAssistantName(ThemeStore.get().assistantName)),
+    [],
+  );
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>MVE</Text>
+        <Text style={styles.title} numberOfLines={1}>
+          {assistantName}
+        </Text>
         <View style={styles.tabRow}>
           <TabChip label="Chat" active={tab === 'chat'} onPress={() => setTab('chat')} />
           <TabChip
@@ -51,7 +60,7 @@ const MveScreen: React.FC = () => {
         </Text>
       )}
 
-      {tab === 'chat' ? <MveChat /> : <TerminalView />}
+      {tab === 'chat' ? <MveChat /> : <Terminal />}
     </KeyboardAvoidingView>
   );
 };
@@ -69,71 +78,6 @@ const TabChip: React.FC<{ label: string; active: boolean; onPress: () => void }>
   </TouchableOpacity>
 );
 
-const TerminalView: React.FC = () => {
-  const [lines, setLines] = useState<string[]>([
-    'MVE Linux sandbox. Type a command, or use "find: <keyword>" to search files.',
-  ]);
-  const [input, setInput] = useState('');
-  const [busy, setBusy] = useState(false);
-  const listRef = useRef<FlatList<string>>(null);
-
-  const append = useCallback((...rows: string[]) => {
-    setLines(prev => [...prev, ...rows]);
-    requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
-  }, []);
-
-  const submit = useCallback(async () => {
-    const cmd = input.trim();
-    if (!cmd || busy) return;
-    setInput('');
-    setBusy(true);
-    try {
-      if (cmd.startsWith('find:')) {
-        const keyword = cmd.slice('find:'.length).trim();
-        append(`$ search "${keyword}" in /root`);
-        const hits = await MveBridge.searchFilenames('/root', keyword);
-        append(hits.length ? hits.join('\n') : '(no matching files)');
-      } else {
-        append(`$ ${cmd}`);
-        const out = await MveBridge.run(cmd);
-        if (out) append(out);
-      }
-    } catch (e) {
-      append(`error: ${String(e)}`);
-    } finally {
-      setBusy(false);
-    }
-  }, [input, busy, append]);
-
-  return (
-    <View style={styles.body}>
-      <FlatList
-        ref={listRef}
-        data={lines}
-        keyExtractor={(_, i) => String(i)}
-        contentContainerStyle={styles.termContent}
-        renderItem={({ item }) => <Text style={styles.termLine}>{item}</Text>}
-      />
-      {busy && <ActivityIndicator color="#9fe0a0" style={styles.spinner} />}
-      <View style={styles.inputRow}>
-        <Text style={styles.prompt}>$</Text>
-        <TextInput
-          style={[styles.input, styles.termInput]}
-          value={input}
-          onChangeText={setInput}
-          placeholder='ls -la   |   find: report'
-          placeholderTextColor="#5f7e63"
-          autoCapitalize="none"
-          autoCorrect={false}
-          onSubmitEditing={submit}
-        />
-        <TouchableOpacity style={styles.sendBtn} onPress={submit} disabled={busy}>
-          <Text style={styles.sendBtnText}>Run</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-};
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

@@ -12,8 +12,13 @@ import {
 } from 'react-native-reanimated';
 import { SPRING_CONFIG_DEFAULT, SPRING_CONFIG_SNAPPY, DURATION } from './springConfigs';
 
+// Reanimated 4 removed SharedTransition.custom; fall back to a no-op builder so
+// this preset module can still evaluate (the presets are inert until used).
+const customTransition: (factory: (values: any) => any) => any =
+  (SharedTransition as any)?.custom?.bind(SharedTransition) ?? (() => undefined);
+
 // Window shared transition - scale and fade
-export const WindowSharedTransition = SharedTransition.custom((values) => {
+export const WindowSharedTransition = customTransition((values: any) => {
   'worklet';
   
   const progress = withSpring(1, SPRING_CONFIG_DEFAULT);
@@ -27,7 +32,7 @@ export const WindowSharedTransition = SharedTransition.custom((values) => {
 });
 
 // Modal shared transition - slide up with fade
-export const ModalSharedTransition = SharedTransition.custom((values) => {
+export const ModalSharedTransition = customTransition((values: any) => {
   'worklet';
   
   return {
@@ -41,7 +46,7 @@ export const ModalSharedTransition = SharedTransition.custom((values) => {
 });
 
 // Taskbar icon shared transition - morph to window
-export const TaskbarToWindowTransition = SharedTransition.custom((values) => {
+export const TaskbarToWindowTransition = customTransition((values: any) => {
   'worklet';
   
   const progress = withSpring(1, SPRING_CONFIG_SNAPPY);
@@ -55,7 +60,7 @@ export const TaskbarToWindowTransition = SharedTransition.custom((values) => {
 });
 
 // Card expand transition
-export const CardExpandTransition = SharedTransition.custom((values) => {
+export const CardExpandTransition = customTransition((values: any) => {
   'worklet';
   
   return {
@@ -67,7 +72,7 @@ export const CardExpandTransition = SharedTransition.custom((values) => {
 });
 
 // Quick fade transition for lists
-export const ListItemTransition = SharedTransition.custom((values) => {
+export const ListItemTransition = customTransition((values: any) => {
   'worklet';
   
   return {

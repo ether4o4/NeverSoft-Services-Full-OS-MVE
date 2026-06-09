@@ -1,4 +1,4 @@
-import { Skia, Shader, Canvas, Fill, Group, Paint, BlurMaskFilter, RuntimeShader, vec } from '@shopify/react-native-skia';
+import { Skia, Shader, Canvas, Fill, Group, Paint, BlurMask, RuntimeShader, vec } from '@shopify/react-native-skia';
 import { Dimensions } from 'react-native';
 
 const { width, height } = Dimensions.get('window');

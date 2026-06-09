@@ -1,5 +1,12 @@
 import React, { useRef, useState } from 'react';
-import { View, StyleSheet, Text, ViewStyle, Dimensions } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  ViewStyle,
+  Dimensions,
+} from 'react-native';
 import {
   Canvas,
   Group,
@@ -8,7 +15,7 @@ import {
   Skia,
   vec,
   LinearGradient,
-  BlurMaskFilter,
+  BlurMask,
 } from '@shopify/react-native-skia';
 import Animated, {
   useSharedValue,
@@ -22,7 +29,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 const { useDerivedValue, useFrame } = require('@shopify/react-native-skia');
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-interface TaskbarProps {
+export interface TaskbarProps {
   height?: number;
   startOrbComponent?: React.ReactNode;
   quickLaunchItems?: React.ReactNode[];
@@ -32,6 +39,8 @@ interface TaskbarProps {
   style?: ViewStyle;
   showClock?: boolean;
   clockFormat?: '12h' | '24h';
+  /** Tap target for the clock — opens the notification/calendar popup. */
+  onClockPress?: () => void;
 }
 
 interface TaskbarButtonProps {
@@ -196,6 +205,7 @@ export const Taskbar: React.FC<TaskbarProps> = ({
   style,
   showClock = true,
   clockFormat = '12h',
+  onClockPress,
 }) => {
   const shaderRef = useRef(taskbarShaderSource);
   const runtimeEffect = useRef(Skia.RuntimeEffect.Make(shaderRef.current));
@@ -206,7 +216,7 @@ export const Taskbar: React.FC<TaskbarProps> = ({
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Animation loop
-  useFrame((frameInfo) => {
+  useFrame((frameInfo: any) => {
     timeValue.value = frameInfo.timeSinceFirstFrame / 1000;
   });
 
@@ -259,7 +269,7 @@ export const Taskbar: React.FC<TaskbarProps> = ({
         {/* Background canvas */}
         <Canvas style={{ width: SCREEN_WIDTH, height, position: 'absolute' }}>
           <Group>
-            <BlurMaskFilter blur={20} style="normal" respectCTM />
+            <BlurMask blur={20} style="normal" respectCTM />
             <Rect x={0} y={0} width={SCREEN_WIDTH} height={height}>
               {runtimeEffect.current && (
                 <Shader
@@ -317,10 +327,14 @@ export const Taskbar: React.FC<TaskbarProps> = ({
             {systemTray}
             
             {showClock && (
-              <View style={styles.clock}>
+              <TouchableOpacity
+                style={styles.clock}
+                onPress={onClockPress}
+                disabled={!onClockPress}
+                activeOpacity={0.7}>
                 <Text style={styles.clockTime}>{formatTime(currentTime)}</Text>
                 <Text style={styles.clockDate}>{formatDate(currentTime)}</Text>
-              </View>
+              </TouchableOpacity>
             )}
           </View>
         </View>

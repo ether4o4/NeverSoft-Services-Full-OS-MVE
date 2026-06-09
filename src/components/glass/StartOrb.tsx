@@ -8,7 +8,7 @@ import {
   Skia,
   vec,
   RadialGradient,
-  BlurMaskFilter,
+  BlurMask,
 } from '@shopify/react-native-skia';
 import Animated, {
   useSharedValue,
@@ -23,7 +23,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 const { useDerivedValue, useFrame } = require('@shopify/react-native-skia');
 
-interface StartOrbProps {
+export interface StartOrbProps {
   size?: number;
   onPress?: () => void;
   onLongPress?: () => void;
@@ -100,7 +100,7 @@ export const StartOrb: React.FC<StartOrbProps> = ({
   const pulseValue = useSharedValue(0);
 
   // Continuous animation
-  useFrame((frameInfo) => {
+  useFrame((frameInfo: any) => {
     timeValue.value = frameInfo.timeSinceFirstFrame / 1000;
   });
 
@@ -210,7 +210,7 @@ export const StartOrb: React.FC<StartOrbProps> = ({
         <Canvas style={{ width: size, height: size }}>
           <Group>
             {/* Glow blur */}
-            <BlurMaskFilter blur={8} style="normal" respectCTM />
+            <BlurMask blur={8} style="normal" respectCTM />
             
             {/* Main orb circle */}
             <Circle

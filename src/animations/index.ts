@@ -16,26 +16,6 @@ export {
   EASING,
 } from './springConfigs';
 
-// Window animations
-export {
-  useWindowAnimation,
-  useWindowController,
-  openWindowWorklet,
-  closeWindowWorklet,
-  type WindowAnimationState,
-  type WindowAnimationOptions,
-} from './useWindowAnimation';
-
-// Minimize animations
-export {
-  useMinimizeAnimation,
-  useMinimizeController,
-  minimizeWindowWorklet,
-  restoreWindowWorklet,
-  type MinimizeAnimationState,
-  type MinimizeAnimationOptions,
-} from './useMinimizeAnimation';
-
 // Start menu animations
 export {
   useStartMenuAnimation,
