@@ -23,10 +23,11 @@ import Animated, {
   withSpring,
   withTiming,
   Easing,
+  useDerivedValue,
+  useFrameCallback,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
-const { useDerivedValue, useFrame } = require('@shopify/react-native-skia');
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export interface TaskbarProps {
@@ -216,7 +217,7 @@ export const Taskbar: React.FC<TaskbarProps> = ({
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Animation loop
-  useFrame((frameInfo: any) => {
+  useFrameCallback((frameInfo: any) => {
     timeValue.value = frameInfo.timeSinceFirstFrame / 1000;
   });
 

@@ -17,10 +17,11 @@ import Animated, {
   withSpring,
   withTiming,
   runOnJS,
+  useDerivedValue,
+  useFrameCallback,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
-const { useDerivedValue, useFrame } = require('@shopify/react-native-skia');
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const TASKBAR_CLEARANCE = 48;
@@ -223,7 +224,7 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
   const timeValue = useSharedValue(0);
   const isDragging = useSharedValue(false);
 
-  useFrame((frameInfo: any) => {
+  useFrameCallback((frameInfo: any) => {
     timeValue.value = frameInfo.timeSinceFirstFrame / 1000;
   });
 

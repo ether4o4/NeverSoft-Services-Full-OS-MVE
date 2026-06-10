@@ -17,10 +17,11 @@ import Animated, {
   withSpring,
   withTiming,
   interpolate,
+  useDerivedValue,
+  useFrameCallback,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
-const { useDerivedValue, useFrame } = require('@shopify/react-native-skia');
 
 export interface GlassPanelProps {
   width: number;
@@ -104,7 +105,7 @@ export const GlassPanel: React.FC<GlassPanelProps> = ({
   const timeValue = useSharedValue(0);
 
   // Animation loop
-  useFrame((frameInfo: any) => {
+  useFrameCallback((frameInfo: any) => {
     timeValue.value = frameInfo.timeSinceFirstFrame / 1000;
   });
 

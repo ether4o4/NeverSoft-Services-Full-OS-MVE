@@ -15,10 +15,11 @@ import Animated, {
   withSpring,
   withTiming,
   interpolateColor,
+  useDerivedValue,
+  useFrameCallback,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
-const { useDerivedValue, useFrame } = require('@shopify/react-native-skia');
 
 export interface GlassButtonProps {
   title: string;
@@ -96,7 +97,7 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
   const pressValue = useSharedValue(0);
   const timeValue = useSharedValue(0);
 
-  useFrame((frameInfo: any) => {
+  useFrameCallback((frameInfo: any) => {
     timeValue.value = frameInfo.timeSinceFirstFrame / 1000;
   });
 

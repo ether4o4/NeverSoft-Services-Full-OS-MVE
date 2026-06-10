@@ -18,10 +18,11 @@ import Animated, {
   withRepeat,
   withSequence,
   Easing,
+  useDerivedValue,
+  useFrameCallback,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
-const { useDerivedValue, useFrame } = require('@shopify/react-native-skia');
 
 export interface StartOrbProps {
   size?: number;
@@ -100,7 +101,7 @@ export const StartOrb: React.FC<StartOrbProps> = ({
   const pulseValue = useSharedValue(0);
 
   // Continuous animation
-  useFrame((frameInfo: any) => {
+  useFrameCallback((frameInfo: any) => {
     timeValue.value = frameInfo.timeSinceFirstFrame / 1000;
   });
 
