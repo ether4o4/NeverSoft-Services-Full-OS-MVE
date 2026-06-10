@@ -41,6 +41,7 @@ import MveScreen from './src/mve/MveScreen';
 import MveSettingsScreen from './src/mve/MveSettingsScreen';
 
 // NeverSoft desktop shell: themes, widgets, icons, popups
+import ErrorBoundary from './src/ErrorBoundary';
 import {ThemeStore} from './src/theme/themes';
 import GlassMenu, {MenuItem} from './src/desktop/GlassMenu';
 import DesktopWidget, {WidgetSpec} from './src/desktop/DesktopWidget';
@@ -480,6 +481,7 @@ const App: React.FC = () => {
 
   return (
     <GestureHandlerRootView style={styles.root}>
+    <ErrorBoundary>
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={theme.gradient[2]} />
 
@@ -642,6 +644,7 @@ const App: React.FC = () => {
         onClose={() => setFolderDialogOpen(false)}
       />
     </SafeAreaView>
+    </ErrorBoundary>
     </GestureHandlerRootView>
   );
 };
