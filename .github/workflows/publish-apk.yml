@@ -53,17 +53,6 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      - name: Generate release keystore
-        run: |
-          # Self-signed key matching the defaults in android/app/build.gradle,
-          # so the release build is signed and installable.
-          keytool -genkeypair -v \
-            -keystore android/app/release.keystore \
-            -alias vistalauncher \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass vistalauncher -keypass vistalauncher \
-            -dname "CN=NeverSoft Services, OU=NeverSoft, O=NeverSoft, L=NA, ST=NA, C=US"
-
       - name: Build release APK
         run: |
           cd android

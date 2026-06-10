@@ -33,6 +33,9 @@ local.properties
 .cxx/
 *.keystore
 !debug.keystore
+# Committed preview signing key so every CI build signs identically and updates
+# install over the top. Self-signed, preview-only — do not reuse for the Play Store.
+!release.keystore
 .kotlin/
 
 # node.js
