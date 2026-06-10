@@ -4,6 +4,8 @@ name: Publish NeverSoft Services APK
 # "android-preview" release so the download URL is always stable:
 #   …/releases/download/android-preview/neversoft-services-os.apk
 on:
+  push:
+    branches: [ claude/confident-fermat-cvtlvb ]
   workflow_dispatch:
     inputs:
       asset_name:
