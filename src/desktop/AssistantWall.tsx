@@ -28,7 +28,6 @@ import { handleAssistantCommand } from '../mve/assistantCommands';
 import { ActionRegistry } from '../mve/ActionRegistry';
 import { ThemeStore } from '../theme/themes';
 import { NewsFeed, NewsPost } from './newsFeed';
-import { NEVERSOFT_OS_APK_URL } from './storeLinks';
 
 const URL_SPLIT_RE = /(https?:\/\/[^\s]+)/gi;
 const IS_URL_RE = /^https?:\/\//i;
@@ -196,14 +195,6 @@ const AssistantWall: React.FC = () => {
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* ── APK link (pinned, very bottom) ── */}
-        <TouchableOpacity
-          style={styles.apkBar}
-          activeOpacity={0.85}
-          onPress={() => Linking.openURL(NEVERSOFT_OS_APK_URL).catch(() => {})}>
-          <Text style={styles.apkText}>⬇  Get the NeverSoft Services APK</Text>
-        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -338,21 +329,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(120,170,235,0.6)',
   },
   sendBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 14 },
-  apkBar: {
-    paddingVertical: 12,
-    alignItems: 'center',
-    backgroundColor: 'rgba(125,216,127,0.22)',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(125,216,127,0.45)',
-  },
-  apkText: {
-    color: '#d2f5d3',
-    fontSize: 14,
-    fontWeight: '700',
-    textShadowColor: 'rgba(0,0,0,0.4)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
 });
 
 export default AssistantWall;

@@ -54,9 +54,11 @@ import {
   MICROSOFT_APPS,
   GHOST_KEY_PKG,
   GHOST_KEY_APK_URL,
+  NEVERSOFT_GITHUB_URL,
   openAppOrStore,
   openPlayStore,
   openPlayStoreSearch,
+  openUrl,
 } from './src/desktop/storeLinks';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
@@ -69,9 +71,12 @@ interface IconSpec {
   label: string;
   icon: string;
   pkg?: string;
+  /** Permanent fixtures can't be removed from the desktop (no bin entry). */
+  permanent?: boolean;
 }
 
 const DEFAULT_ICONS: IconSpec[] = [
+  {id: 'neversoft', label: 'NeverSoft', icon: '💠', permanent: true},
   {id: 'computer', label: 'Computer', icon: '💻'},
   {id: 'documents', label: 'Documents', icon: '📁'},
   {id: 'pictures', label: 'Pictures', icon: '🖼️'},
@@ -303,6 +308,10 @@ const App: React.FC = () => {
   const onIconPress = useCallback(
     (icon: IconSpec) => {
       switch (icon.id) {
+        case 'neversoft':
+          // Permanent brand icon → straight to the NeverSoft GitHub.
+          openUrl(NEVERSOFT_GITHUB_URL);
+          return;
         case 'ghost-key':
           // The legit NeverSoft (Ghost Key) file explorer — launch it if
           // installed, otherwise fetch the real APK.
@@ -384,12 +393,17 @@ const App: React.FC = () => {
           onPress: () =>
             iconMenu.pkg ? openPlayStore(iconMenu.pkg) : openWindow('Settings'),
         },
-        {
-          label: 'Remove from desktop',
-          icon: '🗑️',
-          danger: true,
-          onPress: () => removeIcon(iconMenu),
-        },
+        // Permanent fixtures (e.g. the NeverSoft brand icon) can't be removed.
+        ...(iconMenu.permanent
+          ? []
+          : [
+              {
+                label: 'Remove from desktop',
+                icon: '🗑️',
+                danger: true,
+                onPress: () => removeIcon(iconMenu),
+              },
+            ]),
       ]
     : [];
 
