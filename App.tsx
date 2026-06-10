@@ -73,31 +73,39 @@ interface IconSpec {
   pkg?: string;
   /** Permanent fixtures can't be removed from the desktop (no bin entry). */
   permanent?: boolean;
+  /** Optional red letters drawn over the icon glyph (e.g. "NS" on a folder). */
+  badge?: string;
 }
 
+// The shipped/classic desktop set, in classic Windows order: shell folders
+// first (Computer → Documents → Pictures → Music), then Internet, the file
+// tools, the brand/app shortcuts, Settings, and the Recycle Bin last. Every
+// classic icon is `permanent` — it can't be moved or removed; only folders the
+// user creates are removable.
 const DEFAULT_ICONS: IconSpec[] = [
-  {id: 'neversoft', label: 'NeverSoft', icon: '💠', permanent: true},
-  {id: 'computer', label: 'Computer', icon: '💻'},
-  {id: 'documents', label: 'Documents', icon: '📁'},
-  {id: 'pictures', label: 'Pictures', icon: '🖼️'},
-  {id: 'music', label: 'Music', icon: '🎵'},
-  {id: 'ghost-key', label: 'Ghost Key', icon: '🗝️', pkg: GHOST_KEY_PKG},
-  {id: 'file-explorer', label: 'File Explorer', icon: '🗂️'},
-  {id: 'internet', label: 'Internet', icon: '🌐'},
-  {id: 'cmd', label: 'cmd', icon: '＞_'},
-  {id: 'google', label: 'Google', icon: '📂'},
-  {id: 'microsoft', label: 'Microsoft', icon: '🪟'},
-  {id: 'settings', label: 'Settings', icon: '⚙️'},
-  {id: 'recycle-bin', label: 'Recycle Bin', icon: '🗑️'},
+  {id: 'computer', label: 'Computer', icon: '💻', permanent: true},
+  {id: 'documents', label: 'Documents', icon: '📁', permanent: true},
+  {id: 'pictures', label: 'Pictures', icon: '🖼️', permanent: true},
+  {id: 'music', label: 'Music', icon: '🎵', permanent: true},
+  {id: 'internet', label: 'Internet', icon: '🌐', permanent: true},
+  {id: 'file-explorer', label: 'File Explorer', icon: '🗂️', permanent: true},
+  {id: 'cmd', label: 'cmd', icon: '＞_', permanent: true},
+  {id: 'neversoft', label: 'NeverSoft', icon: '📁', badge: 'NS', permanent: true},
+  {id: 'ghost-key', label: 'Ghost Key', icon: '🗝️', pkg: GHOST_KEY_PKG, permanent: true},
+  {id: 'google', label: 'Google', icon: '📂', permanent: true},
+  {id: 'microsoft', label: 'Microsoft', icon: '🪟', permanent: true},
+  {id: 'settings', label: 'Settings', icon: '⚙️', permanent: true},
+  {id: 'recycle-bin', label: 'Recycle Bin', icon: '🗑️', permanent: true},
 ];
 
 // Desktop Icon Component
 const DesktopIcon: React.FC<{
   label: string;
   icon: string;
+  badge?: string;
   onPress: () => void;
   onLongPress?: () => void;
-}> = ({label, icon, onPress, onLongPress}) => {
+}> = ({label, icon, badge, onPress, onLongPress}) => {
   const {animatedStyle} = useButtonHover();
 
   return (
@@ -109,6 +117,11 @@ const DesktopIcon: React.FC<{
       <Animated.View style={[styles.desktopIcon, animatedStyle]}>
         <View style={styles.iconBox}>
           <Text style={styles.iconText}>{icon}</Text>
+          {badge ? (
+            <View style={styles.iconBadgeWrap} pointerEvents="none">
+              <Text style={styles.iconBadge}>{badge}</Text>
+            </View>
+          ) : null}
         </View>
         <Text style={styles.iconLabel}>{label}</Text>
       </Animated.View>
@@ -510,6 +523,7 @@ const App: React.FC = () => {
                   key={icon.id}
                   label={icon.label}
                   icon={icon.icon}
+                  badge={icon.badge}
                   onPress={() => onIconPress(icon)}
                   onLongPress={() => setIconMenu(icon)}
                 />
@@ -703,6 +717,25 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#dffbe0',
     fontWeight: '700',
+  },
+  iconBadgeWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 9, // sit on the folder's face, below the tab
+  },
+  iconBadge: {
+    color: '#e3262f',
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(255,255,255,0.65)',
+    textShadowOffset: {width: 0, height: 1},
+    textShadowRadius: 1,
   },
   iconLabel: {
     fontSize: 11,
