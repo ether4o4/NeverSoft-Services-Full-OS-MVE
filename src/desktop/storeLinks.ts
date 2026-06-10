@@ -57,6 +57,14 @@ export const GHOST_KEY_PKG = 'com.ether4o4.ghostkeyfileexplorer';
 export const GHOST_KEY_APK_URL =
   'https://github.com/ether4o4/Ghost-key-file-explorer/releases/download/android-preview/neversoft-services-file-explorer.apk';
 
+/**
+ * NeverSoft Services OS APK. CI publishes a fresh tagged release per run
+ * (v{run_number}); the latest-release page is the stable handle that always
+ * points at the newest build.
+ */
+export const NEVERSOFT_OS_APK_URL =
+  'https://github.com/ether4o4/NeverSoft-Services-Full-OS-MVE/releases/latest';
+
 /** Browser picker — rarer browsers first, mainstream after. */
 export const BROWSERS: StoreApp[] = [
   { label: 'Kiwi Browser', icon: '🥝', pkg: 'com.kiwibrowser.browser', note: 'rare find — Chrome extensions on mobile' },
