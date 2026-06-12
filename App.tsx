@@ -10,6 +10,7 @@ import {
   Dimensions,
   TouchableOpacity,
   Modal,
+  BackHandler,
 } from 'react-native';
 import {
   GestureHandlerRootView,
@@ -25,13 +26,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import {ActionRegistry, Intent} from './src/mve/ActionRegistry';
 
 // Import our glass components
-import {
-  GlassPanel,
-  GlassButton,
-  StartOrb,
-  WindowFrame,
-  Taskbar,
-} from './src/components/glass';
+import {StartOrb, WindowFrame, Taskbar} from './src/components/glass';
 
 // Import animation hooks
 import {useButtonHover} from './src/animations';
@@ -84,19 +79,19 @@ interface IconSpec {
 // classic icon is `permanent` — it can't be moved or removed; only folders the
 // user creates are removable.
 const DEFAULT_ICONS: IconSpec[] = [
+  {id: 'internet', label: 'Internet', icon: '🌐', permanent: true},
+  {id: 'recycle-bin', label: 'Recycle Bin', icon: '🗑️', permanent: true},
   {id: 'computer', label: 'Computer', icon: '💻', permanent: true},
+  {id: 'file-explorer', label: 'File Explorer', icon: '🗂️', permanent: true},
   {id: 'documents', label: 'Documents', icon: '📁', permanent: true},
   {id: 'pictures', label: 'Pictures', icon: '🖼️', permanent: true},
   {id: 'music', label: 'Music', icon: '🎵', permanent: true},
-  {id: 'internet', label: 'Internet', icon: '🌐', permanent: true},
-  {id: 'file-explorer', label: 'File Explorer', icon: '🗂️', permanent: true},
   {id: 'cmd', label: 'cmd', icon: '＞_', permanent: true},
   {id: 'neversoft', label: 'NeverSoft', icon: '📁', badge: 'NS', permanent: true},
   {id: 'ghost-key', label: 'Ghost Key', icon: '🗝️', pkg: GHOST_KEY_PKG, permanent: true},
   {id: 'google', label: 'Google', icon: '📂', permanent: true},
   {id: 'microsoft', label: 'Microsoft', icon: '🪟', permanent: true},
   {id: 'settings', label: 'Settings', icon: '⚙️', permanent: true},
-  {id: 'recycle-bin', label: 'Recycle Bin', icon: '🗑️', permanent: true},
 ];
 
 // Desktop Icon Component
@@ -124,67 +119,141 @@ const DesktopIcon: React.FC<{
             </View>
           ) : null}
         </View>
-        <Text style={styles.iconLabel}>{label}</Text>
+        <Text style={styles.iconLabel} numberOfLines={2}>{label}</Text>
       </Animated.View>
     </TouchableOpacity>
   );
 };
 
-// Start Menu Component
+// Start Menu — a real app drawer: all apps on the left (each pinnable to Start
+// or to the taskbar), pinned-to-Start tiles on the right, and a bottom row of
+// Settings / Files / Power.
 const StartMenu: React.FC<{
   visible: boolean;
   onClose: () => void;
-  onOpenMve: () => void;
-  onOpenWindow: (title: string) => void;
-}> = ({visible, onClose, onOpenMve, onOpenWindow}) => {
+  apps: IconSpec[];
+  onLaunch: (icon: IconSpec) => void;
+  pinnedStart: string[];
+  onTogglePinStart: (id: string) => void;
+  pinnedTaskbar: string[];
+  onTogglePinTaskbar: (id: string) => void;
+  onOpenSettings: () => void;
+  onOpenFiles: () => void;
+  onPower: () => void;
+}> = ({
+  visible,
+  onClose,
+  apps,
+  onLaunch,
+  pinnedStart,
+  onTogglePinStart,
+  pinnedTaskbar,
+  onTogglePinTaskbar,
+  onOpenSettings,
+  onOpenFiles,
+  onPower,
+}) => {
+  const launch = (icon: IconSpec) => {
+    onClose();
+    onLaunch(icon);
+  };
+  const pinned = apps.filter(a => pinnedStart.includes(a.id));
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}>
-      <TouchableOpacity style={styles.modalOverlay} onPress={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <TouchableOpacity style={styles.startOverlay} activeOpacity={1} onPress={onClose}>
         <View style={styles.startMenu}>
-          <GlassPanel width={280} height={400} cornerRadius={8}>
-            <View style={styles.startMenuContent}>
-              <Text style={styles.startMenuTitle}>Start</Text>
-              <View style={styles.menuDivider} />
+          <LinearGradient
+            colors={['rgba(58,92,150,0.97)', 'rgba(20,34,56,0.98)']}
+            style={styles.startGradient}>
+            <Text style={styles.startMenuTitle}>Start</Text>
+            <View style={styles.menuDivider} />
 
-              <GlassButton title="MVE" onPress={onOpenMve} width={240} />
-              <GlassButton
-                title="cmd"
-                onPress={() => {
-                  onClose();
-                  onOpenWindow('cmd');
-                }}
-                width={240}
-              />
-              <GlassButton
-                title="Personalize"
-                onPress={() => {
-                  onClose();
-                  onOpenWindow('Settings');
-                }}
-                width={240}
-              />
-              <GlassButton
-                title="Recycle Bin"
-                onPress={() => {
-                  onClose();
-                  onOpenWindow('Recycle Bin');
-                }}
-                width={240}
-              />
+            <View style={styles.startBody}>
+              {/* All apps (left) */}
+              <View style={styles.startApps}>
+                <Text style={styles.startColLabel}>All apps</Text>
+                <ScrollView style={styles.startAppsScroll}>
+                  {apps.map(app => (
+                    <View key={app.id} style={styles.appRow}>
+                      <TouchableOpacity
+                        style={styles.appRowMain}
+                        activeOpacity={0.7}
+                        onPress={() => launch(app)}>
+                        <Text style={styles.appRowIcon}>{app.icon}</Text>
+                        <Text style={styles.appRowLabel} numberOfLines={1}>
+                          {app.label}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        hitSlop={6}
+                        onPress={() => onTogglePinStart(app.id)}
+                        style={[styles.pinBtn, pinnedStart.includes(app.id) && styles.pinBtnOn]}>
+                        <Text style={styles.pinBtnText}>📌</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        hitSlop={6}
+                        onPress={() => onTogglePinTaskbar(app.id)}
+                        style={[styles.pinBtn, pinnedTaskbar.includes(app.id) && styles.pinBtnOn]}>
+                        <Text style={styles.pinBtnText}>▭</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
 
-              <View style={styles.menuDivider} />
-
-              <GlassButton
-                title="Shut Down"
-                onPress={() => {}}
-                width={240}
-              />
+              {/* Pinned to Start (right) */}
+              <View style={styles.startPinned}>
+                <Text style={styles.startColLabel}>Pinned</Text>
+                <ScrollView contentContainerStyle={styles.pinnedGrid}>
+                  {pinned.length === 0 ? (
+                    <Text style={styles.pinnedEmpty}>Tap 📌 to pin apps here.</Text>
+                  ) : (
+                    pinned.map(app => (
+                      <TouchableOpacity
+                        key={app.id}
+                        style={styles.pinnedTile}
+                        activeOpacity={0.75}
+                        onPress={() => launch(app)}>
+                        <Text style={styles.pinnedTileIcon}>{app.icon}</Text>
+                        <Text style={styles.pinnedTileLabel} numberOfLines={1}>
+                          {app.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))
+                  )}
+                </ScrollView>
+              </View>
             </View>
-          </GlassPanel>
+
+            {/* Bottom row: settings wheel · files · power */}
+            <View style={styles.menuDivider} />
+            <View style={styles.startFooter}>
+              <TouchableOpacity
+                style={styles.footerBtn}
+                onPress={() => {
+                  onClose();
+                  onOpenSettings();
+                }}>
+                <Text style={styles.footerGlyph}>⚙️</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.footerBtn}
+                onPress={() => {
+                  onClose();
+                  onOpenFiles();
+                }}>
+                <Text style={styles.footerGlyph}>🗂️</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.footerBtn}
+                onPress={() => {
+                  onClose();
+                  onPower();
+                }}>
+                <Text style={styles.footerGlyph}>⏻</Text>
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
         </View>
       </TouchableOpacity>
     </Modal>
@@ -274,8 +343,13 @@ const App: React.FC = () => {
   const [iconMenu, setIconMenu] = useState<IconSpec | null>(null);
   const [desktopMenuOpen, setDesktopMenuOpen] = useState(false);
   const [folderDialogOpen, setFolderDialogOpen] = useState(false);
+  const [pinnedStart, setPinnedStart] = useState<string[]>(['internet', 'cmd', 'ghost-key']);
+  const [pinnedTaskbar, setPinnedTaskbar] = useState<string[]>(['internet', 'file-explorer']);
   const [theme, setTheme] = useState(() => ThemeStore.theme());
   const pagerRef = useRef<ScrollView>(null);
+
+  const togglePin = (setter: React.Dispatch<React.SetStateAction<string[]>>) => (id: string) =>
+    setter(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
 
   useEffect(() => ThemeStore.subscribe(() => setTheme(ThemeStore.theme())), []);
 
@@ -294,6 +368,11 @@ const App: React.FC = () => {
   // Summon MVE: snap the pager to the MVE page (left of home).
   const summonMve = useCallback(() => {
     pagerRef.current?.scrollTo({x: 0, animated: true});
+  }, []);
+
+  // Minimize the MVE wall: snap back to the home desktop (right page).
+  const goHome = useCallback(() => {
+    pagerRef.current?.scrollTo({x: SCREEN_WIDTH, animated: true});
   }, []);
 
   // Open intents drive the taskbar MVE pill (context-first surfacing).
@@ -507,7 +586,7 @@ const App: React.FC = () => {
         }>
         {/* MVE page — chat + Linux sandbox */}
         <View style={styles.page}>
-          <MveScreen />
+          <MveScreen onMinimize={goHome} />
         </View>
 
         {/* Home desktop */}
@@ -573,15 +652,19 @@ const App: React.FC = () => {
         </View>
       </ScrollView>
 
-      {/* Start Menu */}
+      {/* Start Menu — real app drawer with pin-to-Start / pin-to-taskbar */}
       <StartMenu
         visible={startMenuOpen}
         onClose={() => setStartMenuOpen(false)}
-        onOpenMve={() => {
-          setStartMenuOpen(false);
-          setMveSettingsOpen(true);
-        }}
-        onOpenWindow={openWindow}
+        apps={icons}
+        onLaunch={onIconPress}
+        pinnedStart={pinnedStart}
+        onTogglePinStart={togglePin(setPinnedStart)}
+        pinnedTaskbar={pinnedTaskbar}
+        onTogglePinTaskbar={togglePin(setPinnedTaskbar)}
+        onOpenSettings={() => openWindow('Settings')}
+        onOpenFiles={() => openWindow('Computer')}
+        onPower={() => BackHandler.exitApp()}
       />
 
       {/* MVE Settings (opened from the start menu) */}
@@ -600,12 +683,24 @@ const App: React.FC = () => {
         <View style={styles.summonEdge} pointerEvents="box-only" />
       </GestureDetector>
 
-      {/* Taskbar — clock opens the notification/calendar popup */}
+      {/* Taskbar — start orb, pinned quick-launch, clock → notification popup */}
       <Taskbar
         height={48}
         startOrbComponent={
           <StartOrb size={40} onPress={toggleStartMenu} />
         }
+        quickLaunchItems={pinnedTaskbar
+          .map(id => icons.find(i => i.id === id))
+          .filter((a): a is IconSpec => !!a)
+          .map(app => (
+            <TouchableOpacity
+              key={app.id}
+              style={styles.taskQuick}
+              activeOpacity={0.7}
+              onPress={() => onIconPress(app)}>
+              <Text style={styles.taskQuickIcon}>{app.icon}</Text>
+            </TouchableOpacity>
+          ))}
         showClock={true}
         onClockPress={() => setNotifOpen(true)}
       />
@@ -696,14 +791,21 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 64, // Space for taskbar
   },
+  // Classic Windows desktop: icons flow top-to-bottom in a left column, then
+  // wrap into the next column — not a grid spread across the screen.
   iconGrid: {
-    flexDirection: 'row',
+    flex: 1,
+    flexDirection: 'column',
     flexWrap: 'wrap',
-    gap: 24,
+    alignContent: 'flex-start',
   },
   desktopIcon: {
-    width: 72,
+    width: 80,
+    height: 86,
     alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingVertical: 4,
+    marginRight: 8,
     gap: 4,
   },
   iconBox: {
@@ -741,43 +843,127 @@ const styles = StyleSheet.create({
     textShadowRadius: 1,
   },
   iconLabel: {
+    width: 78,
     fontSize: 11,
+    lineHeight: 13,
     color: 'white',
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: {width: 0, height: 1},
     textShadowRadius: 2,
     textAlign: 'center',
   },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    paddingBottom: 56,
-    paddingLeft: 8,
-  },
+  // ── Start menu (app drawer) ──
+  startOverlay: {flex: 1, justifyContent: 'flex-end'},
   startMenu: {
-    width: 280,
+    height: '76%',
+    marginBottom: 48, // sit above the taskbar
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 8},
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.45,
     shadowRadius: 16,
     elevation: 16,
   },
-  startMenuContent: {
-    padding: 12,
-    gap: 8,
+  startGradient: {
+    flex: 1,
+    borderTopWidth: 1,
+    borderColor: 'rgba(255,255,255,0.45)',
+    paddingHorizontal: 12,
+    paddingTop: 10,
   },
   startMenuTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     color: 'white',
-    paddingHorizontal: 8,
-    paddingBottom: 8,
+    paddingHorizontal: 6,
+    paddingBottom: 6,
   },
   menuDivider: {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    marginVertical: 4,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    marginVertical: 6,
   },
+  startBody: {flex: 1, flexDirection: 'row', gap: 10},
+  startApps: {flex: 1.25},
+  startPinned: {flex: 1},
+  startColLabel: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 6,
+    paddingLeft: 4,
+  },
+  startAppsScroll: {flex: 1},
+  appRow: {flexDirection: 'row', alignItems: 'center', paddingVertical: 3, gap: 6},
+  appRowMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 4,
+  },
+  appRowIcon: {fontSize: 18, width: 24, textAlign: 'center', color: '#dffbe0'},
+  appRowLabel: {color: '#eaf4ff', fontSize: 14, flex: 1},
+  pinBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
+  pinBtnOn: {
+    backgroundColor: 'rgba(120,170,235,0.5)',
+    borderColor: 'rgba(150,200,255,0.7)',
+  },
+  pinBtnText: {fontSize: 12},
+  pinnedGrid: {flexDirection: 'row', flexWrap: 'wrap', gap: 8},
+  pinnedEmpty: {color: 'rgba(255,255,255,0.5)', fontSize: 12, fontStyle: 'italic'},
+  pinnedTile: {
+    width: 70,
+    height: 70,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  pinnedTileIcon: {fontSize: 24},
+  pinnedTileLabel: {color: '#fff', fontSize: 10, textAlign: 'center', paddingHorizontal: 2},
+  startFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  footerBtn: {
+    width: 54,
+    height: 44,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  footerGlyph: {fontSize: 22},
+  taskQuick: {
+    width: 34,
+    height: 34,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 2,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
+  },
+  taskQuickIcon: {fontSize: 16},
   windowContent: {
     flex: 1,
     justifyContent: 'center',

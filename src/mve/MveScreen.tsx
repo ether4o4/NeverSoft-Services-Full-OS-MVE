@@ -9,6 +9,8 @@
 import React from 'react';
 import AssistantWall from '../desktop/AssistantWall';
 
-const MveScreen: React.FC = () => <AssistantWall />;
+const MveScreen: React.FC<{ onMinimize?: () => void }> = ({ onMinimize }) => (
+  <AssistantWall onMinimize={onMinimize} />
+);
 
 export default MveScreen;

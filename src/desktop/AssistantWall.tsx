@@ -58,7 +58,7 @@ function timeAgo(ms: number): string {
   return `${Math.floor(s / 86400)}d ago`;
 }
 
-const AssistantWall: React.FC = () => {
+const AssistantWall: React.FC<{ onMinimize?: () => void }> = ({ onMinimize }) => {
   const [assistantName, setAssistantName] = useState(() => ThemeStore.get().assistantName);
   const [posts, setPosts] = useState<NewsPost[]>(() => NewsFeed.all());
   const [draft, setDraft] = useState('');
@@ -106,9 +106,16 @@ const AssistantWall: React.FC = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.page}>
       <View style={styles.glass}>
-        <Text style={styles.heading} numberOfLines={1}>
-          {assistantName}
-        </Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.heading} numberOfLines={1}>
+            {assistantName}
+          </Text>
+          {onMinimize && (
+            <TouchableOpacity onPress={onMinimize} style={styles.minBtn} hitSlop={10}>
+              <Text style={styles.minBtnText}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         {!isNative && <Text style={styles.mockBanner}>Engine not linked — showing mock data</Text>}
 
         {/* ── News feed (top, scrollable) ── */}
@@ -201,7 +208,26 @@ const AssistantWall: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  page: { flex: 1, padding: 8 },
+  // paddingBottom clears the 48px taskbar so the message input isn't hidden behind it.
+  page: { flex: 1, paddingTop: 8, paddingHorizontal: 8, paddingBottom: 54 },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingRight: 8,
+  },
+  minBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    marginRight: 6,
+  },
+  minBtnText: { color: '#ffffff', fontSize: 14, fontWeight: '700' },
   glass: {
     flex: 1,
     borderRadius: 14,

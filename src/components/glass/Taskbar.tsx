@@ -13,6 +13,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -62,6 +63,14 @@ export const Taskbar: React.FC<TaskbarProps> = ({
 
   return (
     <View style={[styles.bar, { height }, style]}>
+      {/* Aero gradient + top highlight */}
+      <LinearGradient
+        colors={['rgba(74,116,178,0.94)', 'rgba(16,30,52,0.96)']}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+      <View style={styles.topHighlight} pointerEvents="none" />
+
       <View style={styles.start}>{startOrbComponent}</View>
 
       {quickLaunchItems.length > 0 && (
@@ -107,9 +116,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 6,
-    backgroundColor: 'rgba(20,40,70,0.85)',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.4)',
+    overflow: 'hidden',
+  },
+  topHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.55)',
   },
   start: { flexDirection: 'row', alignItems: 'center', paddingRight: 6 },
   row: { flexDirection: 'row', alignItems: 'center' },
