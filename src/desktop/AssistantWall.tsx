@@ -28,6 +28,7 @@ import { handleAssistantCommand } from '../mve/assistantCommands';
 import { ActionRegistry } from '../mve/ActionRegistry';
 import { ThemeStore } from '../theme/themes';
 import { NewsFeed, NewsPost } from './newsFeed';
+import NsAvatar from './NsAvatar';
 
 const URL_SPLIT_RE = /(https?:\/\/[^\s]+)/gi;
 const IS_URL_RE = /^https?:\/\//i;
@@ -107,9 +108,12 @@ const AssistantWall: React.FC<{ onMinimize?: () => void }> = ({ onMinimize }) =>
       style={styles.page}>
       <View style={styles.glass}>
         <View style={styles.headerRow}>
-          <Text style={styles.heading} numberOfLines={1}>
-            {assistantName}
-          </Text>
+          <View style={styles.headerLeft}>
+            <NsAvatar talking={sending} size={52} />
+            <Text style={styles.heading} numberOfLines={1}>
+              {assistantName}
+            </Text>
+          </View>
           {onMinimize && (
             <TouchableOpacity onPress={onMinimize} style={styles.minBtn} hitSlop={10}>
               <Text style={styles.minBtnText}>✕</Text>
@@ -215,6 +219,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingRight: 8,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    paddingLeft: 12,
   },
   minBtn: {
     width: 30,
