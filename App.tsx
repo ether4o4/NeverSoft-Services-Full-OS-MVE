@@ -634,10 +634,12 @@ const App: React.FC = () => {
             {/* Open Windows */}
             {openWindows.map((title, index) => {
               const size = windowSize(title);
+              const isCmd = title === 'cmd';
               return (
                 <WindowFrame
                   key={title}
-                  title={title}
+                  title={isCmd ? 'C:\\Windows\\System32\\cmd.exe' : title}
+                  dark={isCmd}
                   width={size.width}
                   height={size.height}
                   x={24 + index * 20}

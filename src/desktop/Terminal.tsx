@@ -1,16 +1,10 @@
 /**
- * Terminal — the legit NeverSoft shell (the "cmd" desktop icon).
+ * Terminal — the cmd window. Styled like the classic Windows Command Prompt
+ * (pure black, white monospace, `C:\>` prompt) but every command runs for real
+ * through the MVE sandbox shell (MveBridge.run). The assistant uses the same
+ * path — `$ <command>` in chat runs here too.
  *
- * This is NOT a shell-icon stub: every command is executed for real through
- * the MVE engine's sandboxed `/system/bin/sh` (MveBridge.run). The assistant
- * uses the exact same path — `$ <command>` in chat runs here too.
- *
- * Readability upgrades over the old terminal tab:
- *   • block-based output — each command renders as a prompt header line with
- *     its output indented beneath, and clear spacing between blocks, so it is
- *     always obvious where a command starts and ends and where you are;
- *   • roomier line height, dimmed-vs-bright output styling, error tinting;
- *   • `clear` wipes the screen, `find: <keyword>` searches sandbox files.
+ * `clear` wipes the screen, `find: <keyword>` searches sandbox files.
  */
 import React, { useCallback, useRef, useState } from 'react';
 import {
@@ -25,7 +19,7 @@ import {
 } from 'react-native';
 import { MveBridge } from '../mve/MveBridge';
 
-export const SHELL_PROMPT = 'user@neversoft:~$';
+export const SHELL_PROMPT = 'C:\\>';
 
 interface Block {
   id: number;
@@ -53,8 +47,8 @@ const Terminal: React.FC = () => {
       id: 0,
       cmd: '',
       output:
-        'NeverSoft Shell — sandboxed /system/bin/sh via the MVE engine.\n' +
-        'Type a command. `find: <keyword>` searches files, `clear` resets.',
+        'NeverSoft Services [Version 10.0.NSOS]\n' +
+        '(c) NeverSoft Services. All rights reserved.\n',
     },
   ]);
   const [input, setInput] = useState('');
@@ -70,7 +64,7 @@ const Terminal: React.FC = () => {
     if (!cmd || busy) return;
     setInput('');
 
-    if (cmd === 'clear') {
+    if (cmd === 'clear' || cmd === 'cls') {
       setBlocks([]);
       return;
     }
@@ -82,7 +76,7 @@ const Terminal: React.FC = () => {
     try {
       const out = await runShell(cmd);
       setBlocks(prev =>
-        prev.map(b => (b.id === id ? { ...b, output: out || '(no output)', running: false } : b)),
+        prev.map(b => (b.id === id ? { ...b, output: out || '', running: false } : b)),
       );
     } catch (e) {
       setBlocks(prev =>
@@ -107,34 +101,32 @@ const Terminal: React.FC = () => {
         renderItem={({ item }) => (
           <View style={styles.block}>
             {item.cmd ? (
-              <Text style={styles.promptLine}>
-                <Text style={styles.promptUser}>{SHELL_PROMPT} </Text>
-                <Text style={styles.promptCmd}>{item.cmd}</Text>
+              <Text style={styles.line}>
+                <Text style={styles.prompt}>{SHELL_PROMPT}</Text>
+                <Text style={styles.cmd}>{item.cmd}</Text>
               </Text>
             ) : null}
             {item.running ? (
-              <Text style={styles.outputDim}>…</Text>
+              <Text style={styles.line}>…</Text>
             ) : item.output ? (
-              <Text style={[styles.output, item.error && styles.outputError]}>
-                {item.output}
-              </Text>
+              <Text style={[styles.line, item.error && styles.error]}>{item.output}</Text>
             ) : null}
           </View>
         )}
       />
-      {busy && <ActivityIndicator color="#9fe0a0" style={styles.spinner} />}
+      {busy && <ActivityIndicator color="#cccccc" style={styles.spinner} />}
       <View style={styles.inputRow}>
-        <Text style={styles.inputPrompt}>{SHELL_PROMPT}</Text>
+        <Text style={styles.prompt}>{SHELL_PROMPT}</Text>
         <TextInput
           style={styles.input}
           value={input}
           onChangeText={setInput}
-          placeholder="ls -la"
-          placeholderTextColor="#5f7e63"
+          placeholder=""
           autoCapitalize="none"
           autoCorrect={false}
           onSubmitEditing={submit}
           blurOnSubmit={false}
+          cursorColor="#f0f0f0"
         />
         <TouchableOpacity style={styles.runBtn} onPress={submit} disabled={busy}>
           <Text style={styles.runBtnText}>↵</Text>
@@ -147,52 +139,41 @@ const Terminal: React.FC = () => {
 const MONO = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
 
 const styles = StyleSheet.create({
-  body: { flex: 1, backgroundColor: 'rgba(4,10,6,0.92)' },
-  content: { padding: 14, gap: 14 },
-  block: { gap: 4 },
-  promptLine: { fontFamily: MONO, fontSize: 13, lineHeight: 20 },
-  promptUser: { color: '#7dd87f', fontWeight: '700' },
-  promptCmd: { color: '#eaffea', fontWeight: '600' },
-  output: {
-    color: '#bdf0be',
+  body: { flex: 1, backgroundColor: '#0c0c0c' },
+  content: { padding: 10 },
+  block: {},
+  line: {
+    color: '#f0f0f0',
     fontFamily: MONO,
-    fontSize: 12.5,
+    fontSize: 13,
     lineHeight: 19,
-    paddingLeft: 10,
-    borderLeftWidth: 2,
-    borderLeftColor: 'rgba(125,216,127,0.25)',
   },
-  outputDim: { color: 'rgba(189,240,190,0.5)', fontFamily: MONO, paddingLeft: 10 },
-  outputError: { color: '#ff9d9d', borderLeftColor: 'rgba(255,120,120,0.4)' },
-  spinner: { marginVertical: 4 },
+  prompt: { color: '#f0f0f0', fontFamily: MONO, fontSize: 13 },
+  cmd: { color: '#f0f0f0', fontFamily: MONO, fontSize: 13 },
+  error: { color: '#ff8a8a' },
+  spinner: { position: 'absolute', right: 12, bottom: 56 },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    padding: 10,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(125,216,127,0.25)',
+    paddingHorizontal: 10,
+    paddingBottom: 8,
+    backgroundColor: '#0c0c0c',
   },
-  inputPrompt: { color: '#7dd87f', fontFamily: MONO, fontSize: 12, fontWeight: '700' },
   input: {
     flex: 1,
-    color: '#eaffea',
-    backgroundColor: 'rgba(125,216,127,0.08)',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    fontSize: 13,
+    color: '#f0f0f0',
     fontFamily: MONO,
+    fontSize: 13,
+    paddingVertical: 4,
+    paddingHorizontal: 2,
   },
   runBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 8,
+    width: 30,
+    height: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(125,216,127,0.3)',
   },
-  runBtnText: { color: '#eaffea', fontSize: 16, fontWeight: '700' },
+  runBtnText: { color: '#888888', fontSize: 15, fontWeight: '700' },
 });
 
 export default Terminal;

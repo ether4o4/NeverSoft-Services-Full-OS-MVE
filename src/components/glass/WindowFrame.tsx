@@ -41,6 +41,8 @@ export interface WindowFrameProps {
   cornerRadius?: number;
   resizable?: boolean;
   draggable?: boolean;
+  /** Black cmd.exe-style chrome instead of the blue Aero glass. */
+  dark?: boolean;
 }
 
 const WindowButton: React.FC<{
@@ -80,6 +82,7 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
   cornerRadius = 8,
   draggable = true,
   resizable = true,
+  dark = false,
 }) => {
   const [windowWidth, setWindowWidth] = useState(initialWidth);
   const [windowHeight, setWindowHeight] = useState(initialHeight);
@@ -135,14 +138,15 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
     <Animated.View
       style={[
         styles.container,
+        dark && styles.containerDark,
         { width: windowWidth, height: windowHeight, borderRadius: cornerRadius },
         animatedStyle,
         style,
       ]}>
       {showTitleBar && (
         <GestureDetector gesture={dragGesture}>
-          <View style={[styles.titleBar, { height: titleBarHeight }]}>
-            <Text style={styles.titleText} numberOfLines={1}>
+          <View style={[styles.titleBar, dark && styles.titleBarDark, { height: titleBarHeight }]}>
+            <Text style={[styles.titleText, dark && styles.titleTextDark]} numberOfLines={1}>
               {title}
             </Text>
             <View style={styles.winButtons}>
@@ -168,6 +172,18 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
 };
 
 const styles = StyleSheet.create({
+  containerDark: {
+    backgroundColor: '#0c0c0c',
+    borderColor: 'rgba(255,255,255,0.22)',
+  },
+  titleBarDark: {
+    backgroundColor: '#1f1f1f',
+    borderBottomColor: '#000000',
+  },
+  titleTextDark: {
+    color: '#e8e8e8',
+    fontWeight: '500',
+  },
   container: {
     position: 'absolute',
     overflow: 'hidden',
