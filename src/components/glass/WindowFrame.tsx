@@ -45,20 +45,12 @@ export interface WindowFrameProps {
   dark?: boolean;
 }
 
-const WindowButton: React.FC<{
-  type: 'minimize' | 'maximize' | 'close';
-  onPress: () => void;
-}> = ({ type, onPress }) => {
-  const glyph = type === 'minimize' ? '—' : type === 'maximize' ? '▢' : '✕';
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.7}
-      style={[styles.winBtn, type === 'close' && styles.winBtnClose]}>
-      <Text style={styles.winBtnText}>{glyph}</Text>
-    </TouchableOpacity>
-  );
-};
+// macOS traffic-light button.
+const TrafficLight: React.FC<{ color: string; onPress: () => void }> = ({ color, onPress }) => (
+  <TouchableOpacity onPress={onPress} hitSlop={8}>
+    <View style={[styles.light, { backgroundColor: color }]} />
+  </TouchableOpacity>
+);
 
 export const WindowFrame: React.FC<WindowFrameProps> = ({
   title,
@@ -146,14 +138,17 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
       {showTitleBar && (
         <GestureDetector gesture={dragGesture}>
           <View style={[styles.titleBar, dark && styles.titleBarDark, { height: titleBarHeight }]}>
-            <Text style={[styles.titleText, dark && styles.titleTextDark]} numberOfLines={1}>
+            <View style={styles.lights}>
+              <TrafficLight color="#ff5f57" onPress={handleClose} />
+              <TrafficLight color="#febc2e" onPress={onMinimize || (() => {})} />
+              <TrafficLight color="#28c840" onPress={handleMaximize} />
+            </View>
+            <Text
+              style={[styles.titleCentered, dark && styles.titleTextDark]}
+              numberOfLines={1}
+              pointerEvents="none">
               {title}
             </Text>
-            <View style={styles.winButtons}>
-              <WindowButton type="minimize" onPress={onMinimize || (() => {})} />
-              <WindowButton type="maximize" onPress={handleMaximize} />
-              <WindowButton type="close" onPress={handleClose} />
-            </View>
           </View>
         </GestureDetector>
       )}
@@ -187,45 +182,41 @@ const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     overflow: 'hidden',
-    backgroundColor: 'rgba(28,42,66,0.94)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
+    backgroundColor: '#f5f5f7',
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.25)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 12,
   },
   titleBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingLeft: 12,
-    paddingRight: 4,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.25)',
+    paddingRight: 10,
+    backgroundColor: '#ececee',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(0,0,0,0.18)',
   },
-  titleText: {
-    flex: 1,
-    color: '#ffffff',
+  lights: { flexDirection: 'row', alignItems: 'center', gap: 8, zIndex: 2 },
+  light: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.18)',
+  },
+  titleCentered: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    color: '#4a4a4f',
     fontSize: 13,
     fontWeight: '600',
-    textShadowColor: 'rgba(0,0,0,0.45)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
-  winButtons: { flexDirection: 'row', alignItems: 'center' },
-  winBtn: {
-    width: 28,
-    height: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 1,
-    borderRadius: 4,
-  },
-  winBtnClose: { backgroundColor: 'rgba(232,17,35,0.0)' },
-  winBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '700' },
   content: { flex: 1, overflow: 'hidden' },
   resizeCorner: {
     position: 'absolute',
@@ -237,7 +228,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     padding: 4,
   },
-  resizeGlyph: { color: 'rgba(255,255,255,0.55)', fontSize: 12 },
+  resizeGlyph: { color: 'rgba(120,120,120,0.6)', fontSize: 12 },
 });
 
 export default WindowFrame;

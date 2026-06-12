@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import { MveBridge } from '../mve/MveBridge';
 
-export const SHELL_PROMPT = 'C:\\>';
+export const SHELL_PROMPT = 'neversoft@MacBook ~ %';
 
 interface Block {
   id: number;
@@ -46,9 +46,7 @@ const Terminal: React.FC = () => {
     {
       id: 0,
       cmd: '',
-      output:
-        'NeverSoft Services [Version 10.0.NSOS]\n' +
-        '(c) NeverSoft Services. All rights reserved.\n',
+      output: `Last login: ${new Date().toLocaleString()} on ttys000`,
     },
   ]);
   const [input, setInput] = useState('');
